@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useUIStore } from "../stores";
+import { useUIStore, useUserCacheStore } from "../stores";
 import Avatar from "./Avatar";
 import * as api from "../services/api";
 import type { RoomMember } from "../types";
@@ -10,6 +10,7 @@ interface Props {
 
 export default function MembersPanel({ roomId }: Props) {
   const { membersPanelOpen, toggleMembersPanel, onlineUsers } = useUIStore();
+  const { getUser } = useUserCacheStore();
   const [members, setMembers] = useState<RoomMember[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -65,7 +66,7 @@ export default function MembersPanel({ roomId }: Props) {
               Online — {online.length}
             </p>
             {online.map((m) => (
-              <MemberItem key={m.id} member={m} />
+              <MemberItem key={m.id} member={m} getUser={getUser} />
             ))}
           </div>
         )}
@@ -76,7 +77,7 @@ export default function MembersPanel({ roomId }: Props) {
               Offline — {offline.length}
             </p>
             {offline.map((m) => (
-              <MemberItem key={m.id} member={m} />
+              <MemberItem key={m.id} member={m} getUser={getUser} />
             ))}
           </div>
         )}
@@ -85,14 +86,22 @@ export default function MembersPanel({ roomId }: Props) {
   );
 }
 
-function MemberItem({ member }: { member: RoomMember }) {
-  const name = member.user?.name || `User ${member.user_id}`;
+function MemberItem({
+  member,
+  getUser,
+}: {
+  member: RoomMember;
+  getUser: (id: number) => any;
+}) {
+  const cached = getUser(member.user_id);
+  const name = member.user?.name || cached?.name || `User ${member.user_id}`;
+  const avatar = member.user?.avatar || cached?.avatar;
 
   return (
     <div className="flex items-center gap-2.5 px-1 py-1.5 rounded-md hover:bg-zinc-900 transition-colors">
       <Avatar
         name={name}
-        avatarUrl={member.user?.avatar}
+        avatarUrl={avatar}
         userId={member.user_id}
         size="sm"
         showOnline

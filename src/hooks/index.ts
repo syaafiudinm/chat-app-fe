@@ -1,7 +1,3 @@
-// ============================================
-// Custom Hooks
-// ============================================
-
 import { useEffect, useRef, useCallback, useState } from "react";
 import { wsService } from "../services/ws";
 import {
@@ -9,10 +5,11 @@ import {
   useRoomStore,
   useMessageStore,
   useUIStore,
+  useUserCacheStore,
 } from "../stores";
 import type { Message } from "../types";
 
-// ---- useWebSocket: Connect + handle all WS events ----
+// ---- useWebSocket ----
 export function useWebSocket() {
   const { user } = useAuthStore();
   const { activeRoomId, updateLastMessage, incrementUnread } = useRoomStore();
@@ -24,6 +21,7 @@ export function useWebSocket() {
     setUserOffline,
     setWsConnected,
   } = useUIStore();
+  const { getUser } = useUserCacheStore();
 
   useEffect(() => {
     if (!user) return;
@@ -38,15 +36,21 @@ export function useWebSocket() {
         },
       ),
 
-      // Backend payload: { id, room_id, sender_id, content, type, ... }
       wsService.on("new_message", (payload: any) => {
+        // Enrich with cached user data if sender object is missing
+        const cachedSender = getUser(payload.sender_id);
         const msg: Message = {
           id: payload.id,
           room_id: payload.room_id,
           sender_id: payload.sender_id,
           content: payload.content,
           message_type: payload.type || "text",
-          sender: payload.sender,
+          type: payload.type || "text",
+          is_edited: payload.is_edited || false,
+          reply_to_id: payload.reply_to_id || null,
+          reply_to: payload.reply_to || null,
+          attachments: payload.attachments || [],
+          sender: payload.sender || (cachedSender ? cachedSender : undefined),
           created_at: payload.created_at,
           updated_at: payload.updated_at || payload.created_at,
         };
@@ -58,12 +62,16 @@ export function useWebSocket() {
       }),
 
       wsService.on("message_updated", (payload: any) => {
+        const cachedSender = getUser(payload.sender_id);
         const msg: Message = {
           id: payload.id,
           room_id: payload.room_id,
           sender_id: payload.sender_id,
           content: payload.content,
           message_type: payload.type || "text",
+          type: payload.type || "text",
+          is_edited: payload.is_edited || true,
+          sender: payload.sender || (cachedSender ? cachedSender : undefined),
           created_at: payload.created_at,
           updated_at: payload.updated_at || payload.created_at,
         };
@@ -77,14 +85,14 @@ export function useWebSocket() {
         },
       ),
 
-      // Backend payload: { room_id, user_id }
       wsService.on(
         "user_typing",
         (payload: { user_id: number; room_id: number }) => {
           if (payload.user_id !== user.id) {
+            const cached = getUser(payload.user_id);
             addTypingUser({
               user_id: payload.user_id,
-              username: `User ${payload.user_id}`,
+              username: cached?.name || `User ${payload.user_id}`,
               room_id: payload.room_id,
             });
             setTimeout(
@@ -108,6 +116,57 @@ export function useWebSocket() {
 
       wsService.on("user_offline", (payload: { user_id: number }) => {
         setUserOffline(payload.user_id);
+      }),
+
+      wsService.on(
+        "message_read",
+        (payload: {
+          room_id: number;
+          message_id: number;
+          user_id: number;
+          read_at: string;
+        }) => {
+          // message_id === 0 means "all read" — refetch jika perlu
+          if (payload.message_id === 0) return;
+
+          // Update the specific message's reads array
+          const roomMsgs = useMessageStore
+            .getState()
+            .messages.get(payload.room_id);
+          if (!roomMsgs) return;
+
+          const msg = roomMsgs.find((m) => m.id === payload.message_id);
+          if (!msg) return;
+
+          const alreadyRead = msg.reads?.some(
+            (r) => r.user_id === payload.user_id,
+          );
+          if (alreadyRead) return;
+
+          const cachedUser = getUser(payload.user_id);
+          const newRead = {
+            id: Date.now(), // temp id
+            message_id: payload.message_id,
+            user_id: payload.user_id,
+            user: cachedUser || undefined,
+            read_at: payload.read_at,
+          };
+
+          const updated = {
+            ...msg,
+            reads: [...(msg.reads || []), newRead],
+          };
+
+          updateMessage(payload.room_id, updated as any);
+        },
+      ),
+
+      wsService.on("error", (payload: any) => {
+        console.error("[WS] Server error:", payload);
+      }),
+
+      wsService.on("pong", () => {
+        // Heartbeat acknowledged
       }),
     ];
 

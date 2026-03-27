@@ -1,7 +1,3 @@
-// ============================================
-// Zustand Stores
-// ============================================
-
 import { create } from "zustand";
 import type { User, Room, Message, TypingUser } from "../types";
 import * as api from "../services/api";
@@ -61,6 +57,39 @@ export const useAuthStore = create<AuthState>((set) => ({
   setUser: (user) => set({ user }),
 }));
 
+// ---- User Cache Store ----
+interface UserCacheState {
+  users: Map<number, User>;
+  fetchUsers: () => Promise<void>;
+  getUser: (id: number) => User | undefined;
+  addUser: (user: User) => void;
+}
+
+export const useUserCacheStore = create<UserCacheState>((set, get) => ({
+  users: new Map(),
+
+  fetchUsers: async () => {
+    try {
+      const res = await api.getUsers(1, 200);
+      const data = Array.isArray(res) ? res : [];
+      const map = new Map<number, User>();
+      data.forEach((u) => map.set(u.id, u));
+      set({ users: map });
+    } catch (err) {
+      console.error("Failed to fetch users:", err);
+    }
+  },
+
+  getUser: (id) => get().users.get(id),
+
+  addUser: (user) =>
+    set((s) => {
+      const map = new Map(s.users);
+      map.set(user.id, user);
+      return { users: map };
+    }),
+}));
+
 // ---- Room Store ----
 interface RoomState {
   rooms: Room[];
@@ -84,8 +113,9 @@ export const useRoomStore = create<RoomState>((set) => ({
   fetchRooms: async () => {
     set({ isLoading: true });
     try {
-      // request() already unwraps .data — could be array or paginated
-      const res = await api.getRooms(1, 100);
+      const { user } = useAuthStore.getState();
+      if (!user) return;
+      const res = await api.getUserRooms(user.id, 1, 100);
       const rooms = Array.isArray(res) ? res : [];
       set({ rooms });
     } catch (err) {
@@ -96,38 +126,45 @@ export const useRoomStore = create<RoomState>((set) => ({
   },
 
   setActiveRoom: (id) => set({ activeRoomId: id }),
-
   addRoom: (room) => set((s) => ({ rooms: [room, ...s.rooms] })),
-
   updateRoom: (room) =>
     set((s) => ({
       rooms: s.rooms.map((r) => (r.id === room.id ? { ...r, ...room } : r)),
     })),
-
   removeRoom: (id) =>
     set((s) => ({
       rooms: s.rooms.filter((r) => r.id !== id),
       activeRoomId: s.activeRoomId === id ? null : s.activeRoomId,
     })),
-
   updateLastMessage: (roomId, message) =>
     set((s) => ({
       rooms: s.rooms
-        .map((r) => (r.id === roomId ? { ...r, last_message: message } : r))
+        .map((r) => {
+          if (r.id !== roomId) return r;
+          return {
+            ...r,
+            last_message: {
+              id: message.id,
+              content: message.content,
+              type: message.type || message.message_type || "text",
+              sender_id: message.sender_id,
+              sender_name: message.sender?.name || "",
+              created_at: message.created_at,
+            },
+          };
+        })
         .sort((a, b) => {
           const aTime = a.last_message?.created_at || a.created_at;
           const bTime = b.last_message?.created_at || b.created_at;
           return new Date(bTime).getTime() - new Date(aTime).getTime();
         }),
     })),
-
   incrementUnread: (roomId) =>
     set((s) => ({
       rooms: s.rooms.map((r) =>
         r.id === roomId ? { ...r, unread_count: (r.unread_count || 0) + 1 } : r,
       ),
     })),
-
   clearUnread: (roomId) =>
     set((s) => ({
       rooms: s.rooms.map((r) =>
@@ -149,7 +186,7 @@ interface MessageState {
   clearMessages: (roomId: number) => void;
 }
 
-export const useMessageStore = create<MessageState>((set, get) => ({
+export const useMessageStore = create<MessageState>((set) => ({
   messages: new Map(),
   isLoading: false,
   hasMore: new Map(),
@@ -160,20 +197,15 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     try {
       const res = await api.getRoomMessages(roomId, page, 50);
       const data = Array.isArray(res) ? res : [];
-
       set((s) => {
         const map = new Map(s.messages);
         const existing = page > 1 ? map.get(roomId) || [] : [];
-        // Messages come newest-first from API, reverse for chronological display
         const newMsgs = [...data].reverse();
         map.set(roomId, page > 1 ? [...newMsgs, ...existing] : newMsgs);
-
         const hasMoreMap = new Map(s.hasMore);
         hasMoreMap.set(roomId, data.length >= 50);
-
         const pageMap = new Map(s.currentPage);
         pageMap.set(roomId, page);
-
         return { messages: map, hasMore: hasMoreMap, currentPage: pageMap };
       });
     } finally {
@@ -227,6 +259,9 @@ interface UIState {
   typingUsers: TypingUser[];
   onlineUsers: Set<number>;
   wsConnected: boolean;
+  replyTo: Message | null;
+  profileModalOpen: boolean;
+  roomSettingsOpen: boolean;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
   toggleMembersPanel: () => void;
@@ -235,6 +270,9 @@ interface UIState {
   setUserOnline: (userId: number) => void;
   setUserOffline: (userId: number) => void;
   setWsConnected: (connected: boolean) => void;
+  setReplyTo: (message: Message | null) => void;
+  setProfileModalOpen: (open: boolean) => void;
+  setRoomSettingsOpen: (open: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -243,12 +281,14 @@ export const useUIStore = create<UIState>((set) => ({
   typingUsers: [],
   onlineUsers: new Set(),
   wsConnected: false,
+  replyTo: null,
+  profileModalOpen: false,
+  roomSettingsOpen: false,
 
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   toggleMembersPanel: () =>
     set((s) => ({ membersPanelOpen: !s.membersPanelOpen })),
-
   addTypingUser: (user) =>
     set((s) => {
       if (
@@ -259,27 +299,26 @@ export const useUIStore = create<UIState>((set) => ({
         return s;
       return { typingUsers: [...s.typingUsers, user] };
     }),
-
   removeTypingUser: (userId, roomId) =>
     set((s) => ({
       typingUsers: s.typingUsers.filter(
         (t) => !(t.user_id === userId && t.room_id === roomId),
       ),
     })),
-
   setUserOnline: (userId) =>
     set((s) => {
       const next = new Set(s.onlineUsers);
       next.add(userId);
       return { onlineUsers: next };
     }),
-
   setUserOffline: (userId) =>
     set((s) => {
       const next = new Set(s.onlineUsers);
       next.delete(userId);
       return { onlineUsers: next };
     }),
-
   setWsConnected: (connected) => set({ wsConnected: connected }),
+  setReplyTo: (message) => set({ replyTo: message }),
+  setProfileModalOpen: (open) => set({ profileModalOpen: open }),
+  setRoomSettingsOpen: (open) => set({ roomSettingsOpen: open }),
 }));

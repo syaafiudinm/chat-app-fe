@@ -14,8 +14,15 @@ export interface Room {
   name: string;
   description?: string;
   type: "private" | "group";
-  owner_id: number;
-  last_message?: Message;
+  created_by: number;
+  last_message?: {
+    id: number;
+    content: string;
+    type: string;
+    sender_id: number;
+    sender_name: string;
+    created_at: string;
+  } | null;
   unread_count?: number;
   members?: RoomMember[];
   created_at: string;
@@ -31,6 +38,16 @@ export interface RoomMember {
   joined_at: string;
 }
 
+export interface Attachment {
+  id: number;
+  message_id: number;
+  file_name: string;
+  file_url: string;
+  file_type: string;
+  file_size: number;
+  created_at: string;
+}
+
 export interface Message {
   id: number;
   room_id: number;
@@ -39,9 +56,10 @@ export interface Message {
   type?: string;
   message_type?: string;
   is_edited?: boolean;
-  reply_to_id?: number;
+  reply_to_id?: number | null;
+  reply_to?: Message | null;
   sender?: User;
-  attachments?: any[];
+  attachments?: Attachment[];
   reads?: MessageRead[];
   created_at: string;
   updated_at: string;
@@ -73,7 +91,13 @@ export interface PaginatedResponse<T> {
 export type WSClientEvent =
   | {
       type: "send_message";
-      payload: { room_id: number; content: string; type?: string };
+      payload: {
+        room_id: number;
+        content: string;
+        type?: string;
+        reply_to_id?: number | null;
+        attachments?: any[];
+      };
     }
   | { type: "typing"; payload: { room_id: number } }
   | { type: "stop_typing"; payload: { room_id: number } }

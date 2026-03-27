@@ -1,15 +1,11 @@
-// ============================================
-// API Service Layer
-// ============================================
-
 import type {
   AuthTokens,
   User,
   Room,
   Message,
-  PaginatedResponse,
   RoomMember,
   MessageRead,
+  Attachment,
 } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080/api/v1";
@@ -58,17 +54,19 @@ async function parseError(res: Response): Promise<ApiError> {
 }
 
 // ---- HTTP Client ----
-// Backend wraps all responses in { code, status, message, data }
-// This function unwraps and returns `data` directly.
 async function request<T>(
   path: string,
   options: RequestInit = {},
   auth = true,
 ): Promise<T> {
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
   };
+
+  // Don't set Content-Type for FormData (browser sets it with boundary)
+  if (!(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
 
   if (auth) {
     const t = loadTokens();
@@ -104,7 +102,6 @@ async function request<T>(
   return body.data as T;
 }
 
-// Raw request that returns the full response body (for auth endpoints)
 async function requestRaw<T>(
   path: string,
   options: RequestInit = {},
@@ -132,7 +129,6 @@ export class ApiError extends Error {
 }
 
 // ---- Auth API ----
-// Login response: { code, status, message, data: { access_token, refresh_token, user } }
 export async function register(name: string, email: string, password: string) {
   const body = await requestRaw<{
     data: { access_token: string; refresh_token: string; user: User };
@@ -302,6 +298,13 @@ export async function sendMessage(data: {
   room_id: number;
   content: string;
   type?: string;
+  reply_to_id?: number | null;
+  attachments?: {
+    file_name: string;
+    file_url: string;
+    file_type: string;
+    file_size: number;
+  }[];
 }) {
   return request<Message>("/messages", {
     method: "POST",
@@ -309,6 +312,8 @@ export async function sendMessage(data: {
       room_id: data.room_id,
       content: data.content,
       type: data.type || "text",
+      reply_to_id: data.reply_to_id || null,
+      attachments: data.attachments || [],
     }),
   });
 }
@@ -353,7 +358,13 @@ export async function markAllRoomMessagesRead(roomId: number) {
 export function getWsUrl(): string {
   const t = loadTokens();
   const wsBase = import.meta.env.VITE_WS_URL || "ws://localhost:8080/api/v1/ws";
-  // If VITE_WS_URL already ends with /ws, don't append again
   const base = wsBase.endsWith("/ws") ? wsBase : `${wsBase}/ws`;
   return `${base}?token=${t?.access_token || ""}`;
+}
+
+export async function createOrGetDM(userId: number) {
+  return request<Room>("/rooms/dm", {
+    method: "POST",
+    body: JSON.stringify({ user_id: userId }),
+  });
 }
