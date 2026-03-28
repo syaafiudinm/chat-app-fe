@@ -15,6 +15,12 @@ const sizeMap = {
   lg: "w-20 h-20 text-2xl",
 };
 
+const borderMap = {
+  sm: "border-[1.5px]",
+  md: "border-2",
+  lg: "border-2",
+};
+
 const dotMap = {
   sm: "w-2.5 h-2.5 -bottom-0 -right-0",
   md: "w-3 h-3 -bottom-0.5 -right-0.5",
@@ -37,11 +43,11 @@ export default function Avatar({
         <img
           src={avatarUrl}
           alt={name}
-          className={`${sizeMap[size]} rounded-full object-cover bg-zinc-800`}
+          className={`${sizeMap[size]} ${borderMap[size]} border-gray-800 rounded-full object-cover bg-gray-100`}
         />
       ) : (
         <div
-          className={`${sizeMap[size]} rounded-full flex items-center justify-center font-bold text-white select-none`}
+          className={`${sizeMap[size]} ${borderMap[size]} border-gray-800 rounded-full flex items-center justify-center font-black text-white select-none`}
           style={{ backgroundColor: getAvatarColor(name) }}
         >
           {getInitials(name)}
@@ -49,8 +55,8 @@ export default function Avatar({
       )}
       {showOnline && (
         <span
-          className={`absolute ${dotMap[size]} block rounded-full border-2 border-zinc-900 ${
-            isOnline ? "bg-emerald-500" : "bg-zinc-600"
+          className={`absolute ${dotMap[size]} block rounded-full border-2 border-white ${
+            isOnline ? "bg-emerald-400" : "bg-gray-300"
           }`}
         />
       )}

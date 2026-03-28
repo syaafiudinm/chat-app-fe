@@ -28,11 +28,10 @@ export default function Sidebar() {
   const [showDMModal, setShowDMModal] = useState(false);
   const [showNewMenu, setShowNewMenu] = useState(false);
   const [search, setSearch] = useState("");
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const getDMName = (room: any): string => {
     if (room.type !== "private") return room.name;
-
-    // From room members if available
     if (room.members && room.members.length > 0) {
       const other = room.members.find((m: any) => m.user_id !== user?.id);
       if (other?.user?.name) return other.user.name;
@@ -41,13 +40,9 @@ export default function Sidebar() {
         if (cached) return cached.name;
       }
     }
-
-    // From last message sender (if sender is not me, that's the other person)
     const lastMsg = getLastMessage(room);
-    if (lastMsg?.sender_name && lastMsg.sender_name !== user?.name) {
+    if (lastMsg?.sender_name && lastMsg.sender_name !== user?.name)
       return lastMsg.sender_name;
-    }
-
     return room.name;
   };
 
@@ -81,48 +76,45 @@ export default function Sidebar() {
     <>
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-30 md:hidden"
+          className="fixed inset-0 bg-black/30 z-30 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       <aside
         className={cn(
-          "fixed md:relative z-40 h-full flex flex-col bg-zinc-950 border-r border-zinc-800/50 transition-transform duration-200",
+          "fixed md:relative z-40 h-full flex flex-col bg-white border-r-2 border-gray-800 transition-transform duration-200",
           "w-72 md:w-72 lg:w-80",
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
       >
         {/* Header */}
-        <div className="h-14 px-4 flex items-center justify-between border-b border-zinc-800/50 shrink-0">
+        <div className="h-14 px-4 flex items-center justify-between border-b-2 border-gray-800 shrink-0">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-white rounded-md flex items-center justify-center">
-              <span className="text-black font-black text-sm">#</span>
+            <div className="w-7 h-7 bg-black rounded-md flex items-center justify-center">
+              <span className="text-white font-black text-sm">#</span>
             </div>
-            <h1 className="text-white font-bold tracking-tight">Chats</h1>
+            <h1 className="text-gray-900 font-black tracking-tight">Chats</h1>
             <span
               className={cn(
-                "w-2 h-2 rounded-full",
-                wsConnected ? "bg-emerald-500" : "bg-red-500",
+                "w-2 h-2 rounded-full border border-gray-800",
+                wsConnected ? "bg-emerald-400" : "bg-red-400",
               )}
-              title={wsConnected ? "Connected" : "Disconnected"}
             />
           </div>
 
-          {/* New chat dropdown */}
           <div className="relative">
             <button
               onClick={() => setShowNewMenu(!showNewMenu)}
-              className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
-              title="New chat"
+              className="w-8 h-8 flex items-center justify-center rounded-lg border-2 border-gray-800 bg-white hover:bg-gray-100 text-gray-800 shadow-[2px_2px_0px] shadow-gray-800 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px] active:shadow-gray-800 transition-all duration-150"
             >
               <svg
-                width="18"
-                height="18"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="2.5"
               >
                 <path d="M12 5v14M5 12h14" />
               </svg>
@@ -134,13 +126,13 @@ export default function Sidebar() {
                   className="fixed inset-0 z-40"
                   onClick={() => setShowNewMenu(false)}
                 />
-                <div className="absolute right-0 top-10 z-50 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl py-1 w-44">
+                <div className="absolute right-0 top-10 z-50 bg-white border-2 border-gray-800 rounded-xl shadow-[3px_3px_0px] shadow-gray-800 py-1 w-48">
                   <button
                     onClick={() => {
                       setShowNewMenu(false);
                       setShowDMModal(true);
                     }}
-                    className="w-full px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors flex items-center gap-2"
+                    className="w-full px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
                   >
                     <svg
                       width="16"
@@ -160,7 +152,7 @@ export default function Sidebar() {
                       setShowNewMenu(false);
                       setShowCreateModal(true);
                     }}
-                    className="w-full px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors flex items-center gap-2"
+                    className="w-full px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
                   >
                     <svg
                       width="16"
@@ -184,10 +176,10 @@ export default function Sidebar() {
         </div>
 
         {/* Search */}
-        <div className="px-3 py-2 shrink-0">
+        <div className="px-3 py-2.5 shrink-0">
           <div className="relative">
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               width="14"
               height="14"
               viewBox="0 0 24 24"
@@ -202,22 +194,23 @@ export default function Sidebar() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search rooms..."
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-md py-1.5 pl-9 pr-3 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
+              placeholder="Search..."
+              className="w-full bg-white border-2 border-gray-800 rounded-lg py-1.5 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-0 focus:border-gray-900 transition-colors"
             />
           </div>
         </div>
 
         {/* Room List */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin px-2 py-1">
+        <div className="flex-1 overflow-y-auto px-2.5 py-1">
           {filteredRooms.length === 0 && (
-            <div className="text-center py-8 text-zinc-600 text-sm">
-              {search ? "No rooms found" : "No conversations yet"}
+            <div className="text-center py-8 text-gray-400 text-sm font-medium">
+              {search ? "No results found" : "No conversations yet"}
             </div>
           )}
           {filteredRooms.map((room) => {
             const lastMsg = getLastMessage(room);
             const displayName = getDMName(room);
+            const isActive = activeRoomId === room.id;
             return (
               <button
                 key={room.id}
@@ -226,10 +219,10 @@ export default function Sidebar() {
                   setSidebarOpen(false);
                 }}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all group mb-0.5",
-                  activeRoomId === room.id
-                    ? "bg-zinc-800 text-white"
-                    : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200",
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 mb-1",
+                  isActive
+                    ? "bg-black text-white shadow-none translate-x-0"
+                    : "bg-white text-gray-700 border-2 border-transparent hover:border-gray-800 hover:shadow-[2px_2px_0px] hover:shadow-gray-800",
                 )}
               >
                 <Avatar
@@ -239,26 +232,49 @@ export default function Sidebar() {
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-sm truncate">
+                    <span className="font-bold text-sm truncate">
                       {room.type === "group" && (
-                        <span className="text-zinc-500 mr-1">#</span>
+                        <span
+                          className={
+                            isActive ? "text-gray-400" : "text-gray-400"
+                          }
+                        >
+                          #{" "}
+                        </span>
                       )}
                       {displayName}
                     </span>
                     {lastMsg && (
-                      <span className="text-[10px] text-zinc-600 shrink-0 ml-2">
+                      <span
+                        className={cn(
+                          "text-[10px] shrink-0 ml-2",
+                          isActive ? "text-gray-400" : "text-gray-400",
+                        )}
+                      >
                         {formatTime(lastMsg.created_at)}
                       </span>
                     )}
                   </div>
                   <div className="flex items-center justify-between mt-0.5">
-                    <p className="text-xs text-zinc-600 truncate">
+                    <p
+                      className={cn(
+                        "text-xs truncate",
+                        isActive ? "text-gray-400" : "text-gray-500",
+                      )}
+                    >
                       {lastMsg
                         ? `${lastMsg.sender_name}: ${lastMsg.content}`
                         : "No messages yet"}
                     </p>
                     {(room.unread_count || 0) > 0 && (
-                      <span className="shrink-0 ml-2 bg-white text-black text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      <span
+                        className={cn(
+                          "shrink-0 ml-2 text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center border-2",
+                          isActive
+                            ? "bg-white text-black border-white"
+                            : "bg-black text-white border-black",
+                        )}
+                      >
                         {room.unread_count}
                       </span>
                     )}
@@ -270,7 +286,7 @@ export default function Sidebar() {
         </div>
 
         {/* User Footer */}
-        <div className="h-14 px-3 flex items-center gap-3 border-t border-zinc-800/50 shrink-0 bg-zinc-950">
+        <div className="h-14 px-3 flex items-center gap-3 border-t-2 border-gray-800 shrink-0 bg-white">
           <Avatar
             name={user?.name || "?"}
             avatarUrl={user?.avatar}
@@ -279,19 +295,19 @@ export default function Sidebar() {
             showOnline
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">
+            <p className="text-sm font-bold text-gray-900 truncate">
               {user?.name}
             </p>
-            <p className="text-[10px] text-zinc-500 truncate">{user?.email}</p>
+            <p className="text-[10px] text-gray-500 truncate">{user?.email}</p>
           </div>
           <button
             onClick={() => setProfileModalOpen(true)}
-            className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-zinc-800 text-zinc-500 hover:text-white transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors"
             title="Settings"
           >
             <svg
-              width="16"
-              height="16"
+              width="15"
+              height="15"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -302,13 +318,13 @@ export default function Sidebar() {
             </svg>
           </button>
           <button
-            onClick={logout}
-            className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-zinc-800 text-zinc-500 hover:text-red-400 transition-colors"
+            onClick={() => setShowLogoutConfirm(true)}
+            className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-red-50 text-gray-500 hover:text-red-500 transition-colors"
             title="Log out"
           >
             <svg
-              width="16"
-              height="16"
+              width="15"
+              height="15"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -327,6 +343,56 @@ export default function Sidebar() {
       )}
       {showDMModal && <NewDMModal onClose={() => setShowDMModal(false)} />}
       {profileModalOpen && <ProfileModal />}
+
+      {showLogoutConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+          onClick={() => setShowLogoutConfirm(false)}
+        >
+          <div
+            className="bg-white border-2 border-gray-800 rounded-xl w-full max-w-xs mx-4 overflow-hidden shadow-[4px_4px_0px] shadow-gray-800"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-6 py-5 text-center">
+              <div className="w-12 h-12 mx-auto mb-3 bg-red-50 border-2 border-red-300 rounded-xl flex items-center justify-center">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="text-red-500"
+                >
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-black text-gray-900 mb-1">
+                Log out?
+              </h3>
+              <p className="text-sm text-gray-500">
+                You'll need to sign in again to continue.
+              </p>
+            </div>
+            <div className="px-6 pb-5 flex gap-2">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 py-2.5 text-sm font-bold text-gray-700 bg-white border-2 border-gray-800 rounded-lg shadow-[2px_2px_0px] shadow-gray-800 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px] active:shadow-gray-800 transition-all duration-150"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={logout}
+                className="flex-1 py-2.5 text-sm font-bold text-white bg-red-500 border-2 border-red-600 rounded-lg shadow-[2px_2px_0px] shadow-red-700 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px] active:shadow-red-700 transition-all duration-150"
+              >
+                Log out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

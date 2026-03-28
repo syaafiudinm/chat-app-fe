@@ -14,16 +14,13 @@ export default function App() {
   useWebSocket();
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchMe();
-    }
+    if (isAuthenticated) fetchMe();
   }, []);
 
   useEffect(() => {
     if (user) {
       fetchRooms();
-      fetchUsers(); // Cache all users for name resolution
-      // Fix URL - push to / if stuck on /login
+      fetchUsers();
       if (window.location.pathname === "/login") {
         window.history.replaceState(null, "", "/");
       }
@@ -38,7 +35,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen w-screen flex bg-zinc-950 text-zinc-100 overflow-hidden">
+    <div className="h-screen w-screen flex bg-stone-100 text-gray-900 overflow-hidden">
       <Sidebar />
       <ChatArea />
     </div>

@@ -43,9 +43,7 @@ export default function MessageInput({ roomId }: Props) {
       setContent("");
       setReplyTo(null);
       setAttachmentUrls([]);
-      if (textareaRef.current) {
-        textareaRef.current.style.height = "auto";
-      }
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
     } finally {
       setSending(false);
     }
@@ -56,9 +54,7 @@ export default function MessageInput({ roomId }: Props) {
       e.preventDefault();
       handleSend();
     }
-    if (e.key === "Escape" && replyTo) {
-      setReplyTo(null);
-    }
+    if (e.key === "Escape" && replyTo) setReplyTo(null);
   };
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -78,7 +74,6 @@ export default function MessageInput({ roomId }: Props) {
       jpg: "image/jpeg",
       jpeg: "image/jpeg",
       gif: "image/gif",
-      webp: "image/webp",
       pdf: "application/pdf",
       mp4: "video/mp4",
       mp3: "audio/mpeg",
@@ -97,28 +92,27 @@ export default function MessageInput({ roomId }: Props) {
     setShowAttachmentInput(false);
   };
 
-  const removeAttachment = (index: number) => {
+  const removeAttachment = (index: number) =>
     setAttachmentUrls((prev) => prev.filter((_, i) => i !== index));
-  };
 
   return (
     <div className="px-4 pb-4 pt-0 shrink-0">
       {/* Reply bar */}
       {replyTo && (
-        <div className="flex items-center gap-2 mb-2 px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-t-xl border-b-0">
-          <div className="w-0.5 h-8 bg-white rounded-full shrink-0" />
+        <div className="flex items-center gap-2 mb-2 px-4 py-2 bg-gray-50 border-2 border-b-0 border-gray-800 rounded-t-xl">
+          <div className="w-1 h-8 bg-black rounded-full shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] text-zinc-500">
+            <p className="text-[11px] text-gray-500">
               Replying to{" "}
-              <span className="text-zinc-300 font-medium">
+              <span className="text-gray-900 font-bold">
                 {replyTo.sender?.name || `User ${replyTo.sender_id}`}
               </span>
             </p>
-            <p className="text-xs text-zinc-600 truncate">{replyTo.content}</p>
+            <p className="text-xs text-gray-400 truncate">{replyTo.content}</p>
           </div>
           <button
             onClick={() => setReplyTo(null)}
-            className="shrink-0 text-zinc-500 hover:text-white transition-colors"
+            className="shrink-0 text-gray-400 hover:text-gray-900 transition-colors"
           >
             <svg
               width="14"
@@ -126,7 +120,7 @@ export default function MessageInput({ roomId }: Props) {
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.5"
             >
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -137,16 +131,16 @@ export default function MessageInput({ roomId }: Props) {
 
       {/* Attachment previews */}
       {attachmentUrls.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-2 px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg">
+        <div className="flex flex-wrap gap-2 mb-2 px-4 py-2 bg-gray-50 border-2 border-gray-800 rounded-xl">
           {attachmentUrls.map((att, i) => (
-            <div
+            <span
               key={i}
-              className="flex items-center gap-1.5 bg-zinc-800 rounded-md px-2 py-1 text-xs text-zinc-300"
+              className="inline-flex items-center gap-1 bg-white border-2 border-gray-800 rounded-lg px-2 py-1 text-xs font-medium text-gray-700"
             >
-              <span className="truncate max-w-[120px]">{att.file_name}</span>
+              {att.file_name}
               <button
                 onClick={() => removeAttachment(i)}
-                className="text-zinc-500 hover:text-red-400"
+                className="text-gray-400 hover:text-red-500"
               >
                 <svg
                   width="12"
@@ -154,44 +148,44 @@ export default function MessageInput({ roomId }: Props) {
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2"
+                  strokeWidth="2.5"
                 >
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
               </button>
-            </div>
+            </span>
           ))}
         </div>
       )}
 
       {/* Attachment URL input */}
       {showAttachmentInput && (
-        <div className="flex gap-2 mb-2 px-1">
+        <div className="flex gap-2 mb-2">
           <input
             type="text"
             value={attName}
             onChange={(e) => setAttName(e.target.value)}
             placeholder="File name"
-            className="flex-1 bg-zinc-900 border border-zinc-800 rounded-md px-3 py-1.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
+            className="flex-1 bg-white border-2 border-gray-800 rounded-lg px-3 py-1.5 text-xs text-gray-900 placeholder-gray-400 focus:ring-0"
           />
           <input
             type="text"
             value={attUrl}
             onChange={(e) => setAttUrl(e.target.value)}
-            placeholder="File URL (https://...)"
-            className="flex-[2] bg-zinc-900 border border-zinc-800 rounded-md px-3 py-1.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
+            placeholder="File URL"
             onKeyDown={(e) => e.key === "Enter" && addAttachment()}
+            className="flex-[2] bg-white border-2 border-gray-800 rounded-lg px-3 py-1.5 text-xs text-gray-900 placeholder-gray-400 focus:ring-0"
           />
           <button
             onClick={addAttachment}
-            className="px-3 py-1.5 bg-white text-black text-xs font-semibold rounded-md hover:bg-zinc-200"
+            className="px-3 py-1.5 bg-black text-white text-xs font-bold rounded-lg border-2 border-black"
           >
             Add
           </button>
           <button
             onClick={() => setShowAttachmentInput(false)}
-            className="px-2 text-zinc-500 hover:text-white"
+            className="px-2 text-gray-400 hover:text-gray-900"
           >
             <svg
               width="14"
@@ -199,7 +193,7 @@ export default function MessageInput({ roomId }: Props) {
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.5"
             >
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -209,14 +203,11 @@ export default function MessageInput({ roomId }: Props) {
       )}
 
       <div
-        className={`flex items-end gap-2 bg-zinc-900 border border-zinc-800 px-4 py-2.5 focus-within:border-zinc-600 transition-colors ${
-          replyTo ? "rounded-b-xl" : "rounded-xl"
-        }`}
+        className={`flex items-end gap-2 bg-white border-2 border-gray-800 px-4 py-2.5 shadow-[3px_3px_0px] shadow-gray-800 ${replyTo ? "rounded-b-xl" : "rounded-xl"}`}
       >
         <button
           onClick={() => setShowAttachmentInput(!showAttachmentInput)}
-          className="shrink-0 p-1 text-zinc-500 hover:text-zinc-300 transition-colors mb-0.5"
-          title="Attach file"
+          className="shrink-0 p-1 text-gray-400 hover:text-gray-900 transition-colors mb-0.5"
         >
           <svg
             width="20"
@@ -239,13 +230,13 @@ export default function MessageInput({ roomId }: Props) {
           onKeyDown={handleKeyDown}
           rows={1}
           placeholder={replyTo ? "Type your reply..." : "Type a message..."}
-          className="flex-1 bg-transparent text-sm text-white placeholder-zinc-600 resize-none focus:outline-none max-h-40 py-1"
+          className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 resize-none focus:outline-none max-h-40 py-1"
         />
 
         <button
           onClick={handleSend}
           disabled={(!content.trim() && attachmentUrls.length === 0) || sending}
-          className="shrink-0 p-1.5 rounded-lg bg-white text-black disabled:opacity-20 disabled:bg-zinc-700 disabled:text-zinc-500 hover:bg-zinc-200 transition-all mb-0.5"
+          className="shrink-0 p-1.5 rounded-lg bg-black text-white disabled:opacity-20 hover:bg-gray-800 transition-all mb-0.5 border-2 border-black disabled:border-gray-300"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />

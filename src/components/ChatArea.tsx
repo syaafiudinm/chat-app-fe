@@ -114,7 +114,7 @@ export default function ChatArea() {
 
   if (!activeRoomId || !room) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-zinc-950">
+      <div className="flex-1 flex items-center justify-center bg-stone-100">
         <div className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center">
             <svg
@@ -146,11 +146,11 @@ export default function ChatArea() {
     <div className="flex-1 flex h-full overflow-hidden">
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <div className="h-14 px-4 flex items-center justify-between border-b border-zinc-800/50 bg-zinc-950 shrink-0">
+        <div className="h-14 px-4 flex items-center justify-between border-b-2 border-gray-800 bg-white shrink-0">
           <div className="flex items-center gap-3">
             <button
               onClick={toggleSidebar}
-              className="md:hidden p-1 text-zinc-400 hover:text-white"
+              className="p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
             >
               <svg
                 width="20"
@@ -233,7 +233,7 @@ export default function ChatArea() {
           )}
           {isLoading && page > 1 && (
             <div className="flex justify-center py-2">
-              <div className="w-4 h-4 border-2 border-zinc-700 border-t-white rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
             </div>
           )}
           {!isLoading && roomMessages.length === 0 && (
@@ -255,10 +255,10 @@ export default function ChatArea() {
             <div key={dateLabel}>
               <div className="flex items-center gap-4 px-4 my-4">
                 <div className="flex-1 h-px bg-zinc-800/50" />
-                <span className="text-[11px] text-zinc-600 font-medium shrink-0">
+                <span className="text-[11px] text-gray-400 font-bold shrink-0 bg-stone-100 px-3">
                   {dateLabel}
                 </span>
-                <div className="flex-1 h-px bg-zinc-800/50" />
+                <div className="flex-1 h-[2px] bg-gray-200" />
               </div>
               {msgs.map((msg: any, i: number) => (
                 <MessageBubble
@@ -274,19 +274,19 @@ export default function ChatArea() {
             <div className="px-4 py-2 flex items-center gap-2">
               <div className="flex gap-0.5">
                 <span
-                  className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce"
+                  className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"
                   style={{ animationDelay: "0ms" }}
                 />
                 <span
-                  className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce"
+                  className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"
                   style={{ animationDelay: "150ms" }}
                 />
                 <span
-                  className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce"
+                  className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"
                   style={{ animationDelay: "300ms" }}
                 />
               </div>
-              <span className="text-xs text-zinc-600">
+              <span className="text-xs text-gray-500 font-medium">
                 {roomTyping.map((t) => t.username).join(", ")}{" "}
                 {roomTyping.length > 1 ? "are" : "is"} typing...
               </span>
